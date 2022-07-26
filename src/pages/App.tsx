@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { MsalProvider, AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
 import { EventType, InteractionType } from "@azure/msal-browser";
-import { msalConfig, b2cPolicies } from "./services/B2C";
-import { PageLayout, IdTokenClaims } from "./ui.jsx";
+import { loginRequest, b2cPolicies } from "../services/B2C";
+import { PageLayout, IdTokenClaims } from "../ui.js";
 import Button from "react-bootstrap/Button";
-import "./styles/App.css";
+
+import { useAuth } from '../hooks/useAuth';
+import { Layout } from '../components/Layout';
 
 
 
@@ -15,9 +17,9 @@ const IdTokenContent = () => {
    * that tells you what msal is currently doing. For more, visit:
    * https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-react/docs/hooks.md
    */
-  const { accounts } = useMsal();
+  const { accounts } = useAuth();
   const [idTokenClaims, setIdTokenClaims] = useState(null);
-
+  console.log('idTokenClaims ', idTokenClaims);
   function GetIdTokenClaims() {
     setIdTokenClaims(accounts[0].idTokenClaims)
   }
@@ -36,8 +38,9 @@ const IdTokenContent = () => {
 
 const MainContent = () => {
 
-  const { instance } = useMsal();
+  const { instance, accounts } = useMsal();
 
+  console.log(accounts);
   /**
    * Using the event API, you can register an event callback that will do something when an event is emitted. 
    * When registering an event callback in a react component you will need to make sure you do 2 things.
@@ -45,42 +48,7 @@ const MainContent = () => {
    * 2) The callback is unregistered before the component unmounts.
    * For more, visit: https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-react/docs/events.md
    */
-  useEffect(() => {
-    const callbackId = instance.addEventCallback((event) => {
-      if (event.eventType === EventType.LOGIN_FAILURE) {
-        if (event.error && event.error.errorMessage.indexOf("AADB2C90118") > -1) {
-          if (event.interactionType === InteractionType.Redirect) {
-            instance.loginRedirect(b2cPolicies.authorities.forgotPassword);
-          } else if (event.interactionType === InteractionType.Popup) {
-            instance.loginPopup(b2cPolicies.authorities.forgotPassword)
-              .catch(e => {
-                return;
-              });
-          }
-        }
-      }
 
-      if (event.eventType === EventType.LOGIN_SUCCESS) {
-        if (event?.payload) {
-          /**
-           * We need to reject id tokens that were not issued with the default sign-in policy.
-           * "acr" claim in the token tells us what policy is used (NOTE: for new policies (v2.0), use "tfp" instead of "acr").
-           * To learn more about B2C tokens, visit https://docs.microsoft.com/en-us/azure/active-directory-b2c/tokens-overview
-           */
-          if (event.payload.idTokenClaims["acr"] === b2cPolicies.names.forgotPassword) {
-            window.alert("Password has been reset successfully. \nPlease sign-in with your new password");
-            return instance.logout();
-          }
-        }
-      }
-    });
-
-    return () => {
-      if (callbackId) {
-        instance.removeEventCallback(callbackId);
-      }
-    };
-  }, []);
 
   return (
     <div className="App">
@@ -88,6 +56,7 @@ const MainContent = () => {
         <IdTokenContent />
       </AuthenticatedTemplate>
 
+      <button onClick={() => instance.loginRedirect(loginRequest)}>LOGIN</button>
       <UnauthenticatedTemplate>
         <h5 className="card-title">Please sign-in to see your profile information.</h5>
       </UnauthenticatedTemplate>
@@ -96,15 +65,12 @@ const MainContent = () => {
 };
 
 
-function App({ msalInstance }) {
-
-
+function App() {
   return (
-    <MsalProvider instance={msalInstance}>
-      <PageLayout>
-        <MainContent />
-      </PageLayout>
-    </MsalProvider>
+    <Layout>
+      <MainContent />
+    </Layout>
+
   )
 }
 

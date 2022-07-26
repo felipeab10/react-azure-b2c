@@ -4,6 +4,7 @@
  */
 
 import { LogLevel } from "@azure/msal-browser";
+console.log(import.meta.env.VITE_AZURE_B2C_AUTHORITY_DOMAIN);
 
 /**
  * Enter here the user flows and custom policies for your B2C application
@@ -12,22 +13,22 @@ import { LogLevel } from "@azure/msal-browser";
  */
 export const b2cPolicies = {
     names: {
-        signUpSignIn: "B2C_1_reactsingin",
-        forgotPassword: "b2c_1_reset",
-        editProfile: "b2c_1_edit_profile"
+        signUpSignIn: import.meta.env.VITE_AZURE_B2C_POLICY_SINGIN,
+        forgotPassword: import.meta.env.VITE_AZURE_B2C_POLICY_RESET_PASSWORD,
+        editProfile: import.meta.env.VITE_AZURE_B2C_POLICY_EDIT
     },
     authorities: {
         signUpSignIn: {
-            authority: "https://proclinms.b2clogin.com/proclinms.onmicrosoft.com/B2C_1_reactsingin",
+            authority: `https://${import.meta.env.VITE_AZURE_B2C_AUTHORITY_DOMAIN}/${import.meta.env.VITE_AZURE_B2C_DOMAIN}/${import.meta.env.VITE_AZURE_B2C_POLICY_SINGIN}`,
         },
         forgotPassword: {
-            authority: "https://proclinms.b2clogin.com/proclinms.onmicrosoft.com/b2c_1_reset",
+            authority: `https://${import.meta.env.VITE_AZURE_B2C_AUTHORITY_DOMAIN}/${import.meta.env.VITE_AZURE_B2C_DOMAIN}/${import.meta.env.VITE_AZURE_B2C_POLICY_RESET_PASSWORD}`,
         },
         editProfile: {
-            authority: "https://proclinms.b2clogin.com/proclinms.onmicrosoft.com/b2c_1_edit_profile"
+            authority: `https://${import.meta.env.VITE_AZURE_B2C_AUTHORITY_DOMAIN}/${import.meta.env.VITE_AZURE_B2C_DOMAIN}/${import.meta.env.VITE_AZURE_B2C_POLICY_EDIT}`
         }
     },
-    authorityDomain: "proclinms.b2clogin.com"
+    authorityDomain: import.meta.env.VITE_AZURE_B2C_AUTHORITY_DOMAIN
 }
 
 /**
@@ -37,7 +38,7 @@ export const b2cPolicies = {
  */
 export const msalConfig = {
     auth: {
-        clientId: "8810a5f5-7357-40b5-b7d0-56e054863b80", // This is the ONLY mandatory field that you need to supply.
+        clientId: import.meta.env.VITE_AZURE_B2C_APPLICATION_ID, // This is the ONLY mandatory field that you need to supply.
         authority: b2cPolicies.authorities.signUpSignIn.authority, // Use a sign-up/sign-in user-flow as a default authority
         knownAuthorities: [b2cPolicies.authorityDomain], // Mark your B2C tenant's domain as trusted.
         redirectUri: "/", // Points to window.location.origin. You must register this URI on Azure Portal/App Registration.
@@ -45,7 +46,7 @@ export const msalConfig = {
         navigateToLoginRequestUrl: false, // If "true", will navigate back to the original request location before processing the auth code response.
     },
     cache: {
-        cacheLocation: "sessionStorage", // Configures cache location. "sessionStorage" is more secure, but "localStorage" gives you SSO between tabs.
+        cacheLocation: "localStorage", // Configures cache location. "sessionStorage" is more secure, but "localStorage" gives you SSO between tabs.
         storeAuthStateInCookie: false, // Set this to "true" if you are having issues on IE11 or Edge
     },
     system: {
@@ -68,8 +69,13 @@ export const msalConfig = {
                         console.warn(message);
                         return;
                 }
-            }
-        }
+            },
+            //  piiLoggingEnabled: false,
+        },
+
+        // windowHashTimeout: 60000,
+        // iframeHashTimeout: 6000,
+        // loadFrameTimeout: 0,
     }
 };
 
